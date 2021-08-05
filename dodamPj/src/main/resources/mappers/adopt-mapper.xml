@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="com.kh.dodamPj.adopt">
+  	
+  	<!-- 입양 동물 목록  -->
+  	<select id="adoptList" resultType="AdoptVo">
+  		select * from 
+  			(select rownum rnum, a.* from
+  				(select * from tbl_adopt
+  				<include refid="search"></include>
+  				order by ad_no desc) a)
+		where rnum between #{startRow} and #{endRow}
+  	</select>
+  	
+  	<!-- 입양 동물 상세 -->
+  	<select id="selectOnePet" resultType="AdoptVo">
+  		select * from tbl_adopt
+  		where ad_no = #{ad_no}
+  	</select>
+  		
+  	<select id="getNextVal" resultType="int">
+		select seq_adopt_no.nextval
+		from dual
+	</select>
+		
+	<select id="selectFile" resultType="String">
+		select * from tbl_adoptAttach
+		where ad_no = #{ad_no}
+	</select>
+
+  	<!-- 유저 입양 예약 신청서 목록 -->
+  	<select id="applyList" resultType="ApplyUserVo">
+  		select * from 
+  			(select rownum rnum, a.* from
+  				(select * from tbl_apply_user
+  				<include refid="searchApply"></include>
+  				order by au_no desc) a)
+		where rnum between #{startRow} and #{endRow}
+  	</select>
+  	
+  	<!-- 유저 입양 예약 신청서 작성 -->
+  	<insert id="insertApply">
+  		insert into tbl_apply_user(au_no, user_name, user_tel, adopt_date, adopt_time,
+  								form_title, form_content, user_id)
+  		values (seq_apply_no.nextval, #{user_name}, #{user_tel}, #{adopt_date}, #{adopt_time}, 
+  				#{form_title}, #{form_content}, #{user_id})
+  	</insert>
+  	
+  	<!-- 유저 예약 신청시 예약 시간 중복 확인 -->
+  	<select id="checkDupTime" resultType="int">
+  		select count(*) from tbl_apply_user
+  		where adopt_time = #{adopt_time}
+  		and adopt_date = #{adopt_date}
+  	</select>
+  	
+  	<!-- 유저 입양 예약 신청서 상세 -->
+  	<select id="selectApply" resultType="ApplyUserVo">
+  		select * from tbl_apply_user
+  		where au_no = #{au_no}
+  	</select>
+  	
+  	<!-- 유저 입양 예약 신청서 수정 -->
+  	<update id="updateApply">
+  		update tbl_apply_user set
+  			user_tel = #{user_tel},
+  			form_title = #{form_title},
+  			form_content = #{form_content}
+  		where au_no = #{au_no}
+  	</update>
+  	
+  	<!-- 유저 입양 예약 신청서 삭제 -->
+	<delete id="deleteApply">
+		delete from tbl_apply_user
+		where au_no = #{au_no}
+	</delete>
+	
+	<!-- 글갯수(동물목록) -->
+	<select id="getCount" resultType="int">
+		select count(*) from tbl_adopt
+		<include refid="search"></include>
+	</select>
+	
+	<!-- 글갯수(신청서목록) -->
+	<select id="getCountApply" resultType="int">
+		select count(*) from tbl_apply_user
+		<include refid="searchApply"></include>
+	</select>
+	
+	<sql id="search">
+		<if test="searchType != null">
+			<choose>
+				<when test='searchType == "species"'>
+					where ad_species like '%' || #{keyword} || '%'
+				</when>
+				<when test='searchType == "kind"'>
+					where ad_kind like '%' || #{keyword} || '%'
+				</when>	
+				<when test='searchType == "gender"'>
+					where ad_gender like '%' || #{keyword} || '%'
+				</when>	
+				<when test='searchType == "age"'>
+					where ad_age like '%' || #{keyword} || '%'
+				</when>	
+				<when test='searchType == "adopt"'>
+					where ad_adoptstate like '%' || #{keyword} || '%'
+				</when>	
+			</choose>
+		</if>
+	</sql>
+	
+	<sql id="searchApply">
+		<if test="searchType != null">
+			<choose>
+				<when test='searchType == "un"'>
+					where user_name like '%' || #{keyword} || '%'
+				</when>
+				<when test='searchType == "date"'>
+					where adopt_date like '%' || #{keyword} || '%'
+				</when>
+			</choose>
+		</if>
+	</sql>
+
+  </mapper>

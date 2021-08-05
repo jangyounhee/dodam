@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.kh.dodamPj.newsboard">
+	
+	<!-- 동물게시판 목록 -->
+	<select id="newsBoard" resultType="NewsBoardVo">
+		select * from
+			(select rownum rnum, a.* from
+				(select * from tbl_animalboard
+				 <include refid="search"></include>
+				 order by are_group desc, are_seq asc) a)
+		where rnum between #{startRow} and #{endRow}
+	</select>
+	
+	<!-- 글쓰기 --> 
+	<insert id="insertArticle">
+		insert into tbl_animalboard (ab_no, ab_title, ab_content, are_group, ab_picture)
+		values (seq_animalboard_bno.nextval, #{ab_title}, #{ab_content}, seq_animalboard_bno.nextval, #{ab_picture, jdbcType=VARCHAR})
+	</insert>
+	
+ 	<!-- 조회 --> 
+	<select id="selectByBno" resultType="NewsBoardVo">
+		select * from tbl_animalboard
+		where ab_no = #{ab_no}
+	</select>
+	
+	<!-- 수정 --> 
+	<update id="updateArticle">
+		update tbl_animalboard set
+			ab_title = #{ab_title},
+			ab_content = #{ab_content}
+		where ab_no = #{ab_no}
+	</update>
+	
+	<!-- 삭제 --> 
+	<delete id="deleteArticle">
+		delete from tbl_animalboard
+		where ab_no = #{ab_no}
+	</delete>
+	
+	<!-- 페이징 -->
+	<select id="getCount" resultType="int">
+		select count(*) from tbl_animalboard
+		<include refid="search"></include>
+	</select>
+	
+	<!-- 검색 -->
+	<sql id="search">
+		<if test="searchType != null">
+		 	<choose>
+		 		<when test='searchType == "t"'>
+		 			where ab_title like '%' || #{keyword} || '%'
+		 		</when>
+		 		<when test='searchType == "u"'>
+		 			where user_id like '%' || #{keyword} || '%'
+		 		</when>
+		 		<when test='searchType == "tc"'>
+		 			where ab_title like '%' || #{keyword} || '%'
+		 			or ab_content like '%' || #{keyword} || '%'
+		 		</when>
+		 	</choose>
+		 </if>
+	</sql>
+	
+	<!-- 댓글수 변경 -->
+	<update id="updateCommentCnt">
+		update tbl_animalboard set
+			comment_cnt = comment_cnt + #{count}
+		where ab_no = #{ab_no}
+	</update>
+	
+	<!-- 조회수 -->
+	<update id="updateViewCnt">
+		update tbl_animalboard set
+			ab_count = ab_count + 1
+		where ab_no = #{ab_no}
+	</update>
+	
+	<!-- 게시글 삭제 시 댓글도 같이 삭제 -->
+	<delete id="anumalCommentDeleteArticle">
+		delete from tbl_comment
+		where ab_no = #{ab_no}
+	</delete>
+	
+	<!-- 첨부파일 추가 -->
+	<insert id="insertAttach">
+		insert into tbl_newsfile(file_name, ab_no)
+		values (#{file_name}, #{ab_no})
+	</insert>
+	
+	<select id="getNextVal" resultType="int">
+		select seq_animalboard_bno.nextval
+		from dual
+	</select>
+	
+	<select id="selectFile" resultType="String">
+		select * from newstbl_file
+		where ab_no = #{ab_no}
+	</select>
+	
+</mapper>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="com.kh.dodamPj.lost">
+  
+  		<!-- 신고서 목록 -->
+  		<select id="reportList" resultType="LostVo">
+  			select * from
+  				(select rownum rnum, a.* from
+  					(select * from tbl_lost
+  					<include refid="search"></include>
+  					order by b_no desc) a)
+  			where rnum between #{startRow} and #{endRow}
+  		</select>
+  		
+  		<!-- 신고서 작성 -->
+  		<insert id="insertReport">
+  			insert into tbl_lost
+  					(b_no, b_title, user_name, user_tel, user_email, p_name, p_species, p_age, p_gender, p_lostdate, 
+  					p_lostplace, p_character, p_picture, user_id)
+  			values (#{b_no}, #{b_title}, #{user_name}, #{user_tel}, #{user_email, jdbcType=VARCHAR}, 
+  					#{p_name}, #{p_species}, #{p_age}, #{p_gender}, 
+  					#{p_lostdate}, #{p_lostplace}, #{p_character, jdbcType=VARCHAR}, #{p_picture, jdbcType=VARCHAR},
+  					#{user_id})
+  		</insert>
+  		
+  		<!-- 첨부파일 추가 -->
+  		<insert id="insertAttach">
+  			insert into tbl_attach(file_name, b_no)
+  			values (#{file_name}, #{b_no})
+  		</insert>
+  		
+  		<select id="getNextVal" resultType="int">
+			select seq_lost_bno.nextval
+			from dual
+		</select>
+		
+		<select id="selectFile" resultType="String">
+			select * from tbl_attach
+			where b_no = #{b_no}
+		</select>
+  		
+  		<!-- 신고서 조회 -->
+  		<select id="reportContent" resultType="LostVo">
+  			select * from tbl_lost
+  			where b_no = #{b_no}
+  		</select>
+  		
+  		<!-- 신고서 수정 -->
+  		<update id="updateReport">
+  			update tbl_lost set
+  				b_title = #{b_title},
+  				user_tel = #{user_tel},
+  				user_email = #{user_email, jdbcType=VARCHAR},
+  				p_lostdate = #{p_lostdate},
+  				p_lostplace = #{p_lostplace},
+  				p_character = #{p_character, jdbcType=VARCHAR}
+  			where b_no = #{b_no}
+  		</update>
+  		
+  		<!-- 신고서 삭제 -->
+  		<delete id="deleteReport">
+  			delete from tbl_lost
+  			where b_no = #{b_no}
+  		</delete>
+  		
+  		<!-- 조회수 증가 -->
+  		<update id="updateViewcnt">
+  			update tbl_lost set
+  				b_viewcnt = b_viewcnt + 1
+  			where b_no = #{b_no}
+  		</update>
+  		
+  		<!-- 글갯수 -->
+  		<select id="getCount" resultType="int">
+  			select count(*) from tbl_lost
+  			<include refid="search"></include>
+  		</select>
+  		
+  		<sql id="search">
+  			<if test="searchType != null">
+  				<choose>
+  					<when test='searchType == "t"'>
+  						where b_title like '%' || #{keyword} || '%'
+  					</when>
+  					<when test='searchType == "un"'>
+  						where user_name like '%' || #{keyword} || '%'
+  					</when>
+  				</choose>
+  			</if>
+  		</sql>
+  
+  </mapper>

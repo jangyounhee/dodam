@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.kh.dodamPj.notice">
+	<select id="getNextVal" resultType="int">
+		select seq_notice_no.nextval
+		from dual
+	</select>
+
+	<!-- 글쓰기 -->
+	<insert id="insertArticle">
+		insert into notice 
+			(n_no, n_title, n_content, n_group, n_pic)
+		values 
+			(#{n_no}, #{n_title}, #{n_content}, #{n_group}, #{n_pic, jdbcType=VARCHAR})
+
+	</insert>
+	
+	<!-- 첨부파일 추가 -->
+	<insert id="insertAttach">
+		insert into tbl_attach
+			(file_name, n_no)
+		values
+			(#{file_name}, #{n_no})
+	</insert>
+	
+	<!-- 글조회 -->
+	<select id="selectByBno" resultType="NoticeVo">
+		select * from notice
+		where n_no = #{n_no}
+	</select>
+	
+	<select id="selectFile" resultType="String">
+		select * from tbl_attach
+		where n_no = #{n_no}
+	</select>
+	
+	<!-- 글수정 -->
+	<update id="updateArticle">
+		update notice set
+			n_title = #{n_title},
+			n_content = #{n_content, jdbcType=VARCHAR}
+		where n_no = #{n_no}
+	</update>
+	
+	<!-- 글삭제 -->
+	<delete id="deleteArticle">
+		delete from notice
+		where n_no = #{n_no}
+	</delete>	
+	
+	<!-- 글목록 -->
+	<select id="listAll" resultType="NoticeVo">
+		select * from
+			(select rownum rnum, a.* from
+				(select * from notice
+				 <include refid="search"></include>
+				 order by n_group desc, n_seq asc) a)
+		where rnum between #{startRow} and #{endRow}
+	</select>
+	
+	<!-- 글갯수 -->
+	<select id="getCount" resultType="int">
+		select count(*) from notice
+		<include refid="search"></include>
+	</select>
+	
+	<sql id="search">
+		<if test="searchType != null">
+		 	<choose>
+		 		<when test='searchType == "t"'>
+		 			where n_title like '%' || #{keyword} || '%'
+		 		</when>
+		 		<when test='searchType == "c"'>
+		 			where n_content like '%' || #{keyword} || '%'
+		 		</when>
+		 		<when test='searchType == "u"'>
+		 			where user_id like '%' || #{keyword} || '%'
+		 		</when>
+		 		<when test='searchType == "tc"'>
+		 			where n_title like '%' || #{keyword} || '%'
+		 			or n_content like '%' || #{keyword} || '%'
+		 		</when>
+		 		<when test='searchType == "tcu"'>
+		 			where n_title like '%' || #{keyword} || '%'
+		 			or n_content like '%' || #{keyword} || '%'
+		 			or user_id  like '%' || #{keyword} || '%'
+		 		</when>
+		 	</choose>
+		 </if>
+	</sql>
+	
+	<!-- 조회수 증가 -->
+	<update id="updateViewCnt">
+		update tbl_board set
+			t_readcount = t_readcount + 1
+		where t_no = #{t_no}
+	</update>
+	
+	<update id="updateCommentCnt">
+		update tbl_board set
+			comment_cnt = comment_cnt + #{count}
+		where t_no = #{t_no}
+	</update>
+	
+</mapper>

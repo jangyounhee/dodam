@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.kh.dodamPj.customerboard">
+	
+	<!-- 문의게시판 목록 -->
+	<select id="customerBoard" resultType="CustomerBoardVo">
+		select * from
+			(select rownum rnum, a.* from
+				(select * from tbl_customerboard
+				 <include refid="search"></include>
+				 order by re_group desc, re_seq asc) a)
+		where rnum between #{startRow} and #{endRow}
+	</select>
+	
+	<!-- 글쓰기 -->
+	<insert id="insertArticle">
+		insert into tbl_customerboard (cb_no, cb_title, cb_content, user_id, re_group)
+		values (seq_customerboard_bno.nextval, #{cb_title}, #{cb_content, jdbcType=VARCHAR}, #{user_id}, seq_customerboard_bno.nextval)
+	</insert>
+
+	<!-- 조회 -->
+	<select id="selectByBno" resultType="CustomerBoardVo">
+		select * from tbl_customerboard
+		where cb_no = #{cb_no}
+	</select>
+	
+	<!-- 수정 -->
+	<update id="updateArticle">
+		update tbl_customerboard set
+			cb_title = #{cb_title},
+			cb_content = #{cb_content}
+		where cb_no = #{cb_no}
+	</update>
+	
+	<!-- 삭제 -->
+	<delete id="deleteArticle">
+		delete from tbl_customerboard
+		where cb_no = #{cb_no}
+	</delete>
+	
+	<!-- 페이징 -->
+	<select id="getCount" resultType="int">
+		select count(*) from tbl_customerboard
+		<include refid="search"></include>
+	</select>
+	
+	<!-- 검색 -->
+	<sql id="search">
+		<if test="searchType != null">
+		 	<choose>
+		 		<when test='searchType == "t"'>
+		 			where cb_title like '%' || #{keyword} || '%'
+		 		</when>
+		 		<when test='searchType == "u"'>
+		 			where user_id like '%' || #{keyword} || '%'
+		 		</when>
+		 		<when test='searchType == "tc"'>
+		 			where cb_title like '%' || #{keyword} || '%'
+		 			or cb_content like '%' || #{keyword} || '%'
+		 		</when>
+		 	</choose>
+		 </if>
+	</sql>
+	
+	<!-- 조회수 -->
+	<update id="updateViewCnt">
+		update tbl_customerboard set
+			cb_count = cb_count + 1
+		where cb_no = #{cb_no}
+	</update>
+	
+	<!-- 답글쓰기 -->
+	<insert id="insertReply">
+		insert into tbl_customerboard (cb_no, cb_title, reply, re_group, re_seq, re_level)
+		values (seq_customerboard_bno.nextval, #{cb_title}, #{reply, jdbcType=VARCHAR}, #{re_group}, #{re_seq} + 1, #{re_level} + 1)
+	</insert>
+	
+	<!-- 답글쓰기 -->
+	<update id="updateReply">
+		update tbl_customerboard set
+			re_seq = re_seq + 1
+			where re_group = seq_customerboard_bno.nextval
+		and re_seq > #{re_seq}
+	</update>
+	
+</mapper>
